@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Minecraft tier logo">
+  <rect width="64" height="64" rx="14" fill="#050505"/>
+  <rect x="10" y="10" width="12" height="12" fill="#31d158"/>
+  <rect x="22" y="10" width="12" height="12" fill="#2f8f46"/>
+  <rect x="34" y="10" width="20" height="12" fill="#1d5f33"/>
+  <rect x="10" y="22" width="12" height="12" fill="#3b2a1f"/>
+  <rect x="22" y="22" width="12" height="12" fill="#6b4328"/>
+  <rect x="34" y="22" width="20" height="12" fill="#3b2a1f"/>
+  <rect x="10" y="34" width="44" height="20" fill="#20140f"/>
+  <rect x="20" y="36" width="8" height="8" fill="#67e8f9"/>
+  <rect x="36" y="36" width="8" height="8" fill="#67e8f9"/>
+  <rect x="26" y="48" width="12" height="4" fill="#ff7a1a"/>
+</svg>

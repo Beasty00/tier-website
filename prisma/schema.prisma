@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  TESTER
+  ADMIN
+}
+
+enum QueueStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CooldownScope {
+  GLOBAL
+  GAMEMODE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  discordId String?  @unique
+  username  String
+  avatar    String?
+  role      UserRole @default(USER)
+  playerId  String?
+  player    Player?  @relation(fields: [playerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Player {
+  id          String       @id @default(cuid())
+  uuid        String       @unique
+  username    String       @unique
+  skin        String?
+  discordId   String?      @unique
+  regionId    String
+  region      Region       @relation(fields: [regionId], references: [id])
+  points      Int          @default(0)
+  rank        Int          @default(0)
+  tierId      String
+  tier        Tier         @relation(fields: [tierId], references: [id])
+  testerId    String?
+  tester      Tester?      @relation(fields: [testerId], references: [id])
+  createdAt   DateTime     @default(now())
+  lastTestAt  DateTime?
+  users       User[]
+  tests       Test[]
+  tiers       PlayerTier[]
+  queues      Queue[]
+  waitlists   Waitlist[]
+  cooldowns   Cooldown[]
+
+  @@index([username])
+  @@index([points])
+}
+
+model Tier {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  label       String
+  order       Int
+  pointsMin   Int          @default(0)
+  players     Player[]
+  playerTiers PlayerTier[]
+  tests       Test[]
+}
+
+model PlayerTier {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id], onDelete: Cascade)
+  tierId     String
+  tier       Tier     @relation(fields: [tierId], references: [id])
+  testerId   String?
+  tester     Tester?  @relation(fields: [testerId], references: [id])
+  points     Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([playerId, gamemodeId])
+}
+
+model Test {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  testerId   String?
+  tester     Tester?  @relation(fields: [testerId], references: [id])
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id])
+  regionId   String
+  region     Region   @relation(fields: [regionId], references: [id])
+  tierId     String
+  tier       Tier     @relation(fields: [tierId], references: [id])
+  notes      String?
+  score      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Tester {
+  id          String           @id @default(cuid())
+  name        String
+  discordId   String?          @unique
+  regionId    String
+  region      Region           @relation(fields: [regionId], references: [id])
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  gamemodes   TesterGamemode[]
+  tests       Test[]
+  players     Player[]
+  playerTiers PlayerTier[]
+}
+
+model TesterGamemode {
+  testerId   String
+  tester     Tester   @relation(fields: [testerId], references: [id], onDelete: Cascade)
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id], onDelete: Cascade)
+
+  @@id([testerId, gamemodeId])
+}
+
+model Queue {
+  id         String      @id @default(cuid())
+  playerId   String?
+  player     Player?     @relation(fields: [playerId], references: [id])
+  username   String
+  uuid       String?
+  discordId  String?
+  regionId   String
+  region     Region      @relation(fields: [regionId], references: [id])
+  gamemodeId String
+  gamemode   Gamemode    @relation(fields: [gamemodeId], references: [id])
+  status     QueueStatus @default(WAITING)
+  priority   Int         @default(0)
+  position   Int         @default(0)
+  joinedAt   DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([gamemodeId, status, position])
+}
+
+model Waitlist {
+  id         String    @id @default(cuid())
+  playerId   String?
+  player     Player?   @relation(fields: [playerId], references: [id])
+  username   String
+  uuid       String?
+  discordId  String?
+  regionId   String
+  region     Region    @relation(fields: [regionId], references: [id])
+  gamemodeId String
+  gamemode   Gamemode  @relation(fields: [gamemodeId], references: [id])
+  priority   Int       @default(0)
+  position   Int       @default(0)
+  notified   Boolean   @default(false)
+  joinedAt   DateTime  @default(now())
+  promotedAt DateTime?
+
+  @@index([gamemodeId, position])
+}
+
+model Cooldown {
+  id         String        @id @default(cuid())
+  playerId   String?
+  player     Player?       @relation(fields: [playerId], references: [id])
+  discordId  String?
+  gamemodeId String?
+  gamemode   Gamemode?     @relation(fields: [gamemodeId], references: [id])
+  scope      CooldownScope
+  expiresAt  DateTime
+  createdAt  DateTime      @default(now())
+
+  @@index([playerId, gamemodeId, expiresAt])
+  @@index([discordId, gamemodeId, expiresAt])
+}
+
+model Gamemode {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  name        String
+  description String?
+  icon        String?
+  enabled     Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  playerTiers PlayerTier[]
+  tests       Test[]
+  testers     TesterGamemode[]
+  queues      Queue[]
+  waitlists   Waitlist[]
+  cooldowns   Cooldown[]
+}
+
+model Region {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  enabled   Boolean    @default(true)
+  players   Player[]
+  testers   Tester[]
+  tests     Test[]
+  queues    Queue[]
+  waitlists Waitlist[]
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
