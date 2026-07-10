@@ -4,7 +4,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
-import { discordAuthUrl, exchangeDiscordCode, signToken } from "./auth";
+import { discordAuthUrl, exchangeDiscordCode, isAdminDiscordId, requireAuth, signToken } from "./auth";
 import { databaseStatus } from "./db";
 import {
   createGamemode,
@@ -78,7 +78,7 @@ app.get("/auth/discord/callback", asyncRoute(async (request, response) => {
   const token = signToken({
     sub: discordUser.id,
     username: discordUser.global_name || discordUser.username,
-    role: "USER",
+    role: isAdminDiscordId(discordUser.id) ? "ADMIN" : "USER",
     discordId: discordUser.id
   });
 
@@ -102,11 +102,11 @@ app.get("/player/:id", asyncRoute(async (request, response) => {
   response.json(player);
 }));
 
-app.post("/player", asyncRoute(async (request, response) => {
+app.post("/player", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   response.status(201).json(await createPlayer(request.body));
 }));
 
-app.put("/player/:id", asyncRoute(async (request, response) => {
+app.put("/player/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const player = await updatePlayer(String(request.params.id), request.body);
   if (!player) {
     response.status(404).json({ error: "Player not found" });
@@ -115,7 +115,7 @@ app.put("/player/:id", asyncRoute(async (request, response) => {
   response.json(player);
 }));
 
-app.delete("/player/:id", asyncRoute(async (request, response) => {
+app.delete("/player/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const removed = await deletePlayer(String(request.params.id));
   response.status(removed ? 204 : 404).send(removed ? undefined : { error: "Player not found" });
 }));
@@ -137,11 +137,11 @@ app.get("/gamemodes", asyncRoute(async (_request, response) => {
   response.json(await listGamemodes());
 }));
 
-app.post("/gamemodes", asyncRoute(async (request, response) => {
+app.post("/gamemodes", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   response.status(201).json(await createGamemode(request.body));
 }));
 
-app.put("/gamemodes/:id", asyncRoute(async (request, response) => {
+app.put("/gamemodes/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const gamemode = await updateGamemode(String(request.params.id), request.body);
   if (!gamemode) {
     response.status(404).json({ error: "Gamemode not found" });
@@ -150,7 +150,7 @@ app.put("/gamemodes/:id", asyncRoute(async (request, response) => {
   response.json(gamemode);
 }));
 
-app.delete("/gamemodes/:id", asyncRoute(async (request, response) => {
+app.delete("/gamemodes/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const removed = await deleteGamemode(String(request.params.id));
   response.status(removed ? 204 : 404).send(removed ? undefined : { error: "Gamemode not found" });
 }));
@@ -159,11 +159,11 @@ app.get("/testers", asyncRoute(async (_request, response) => {
   response.json(await listTesters());
 }));
 
-app.post("/testers", asyncRoute(async (request, response) => {
+app.post("/testers", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   response.status(201).json(await createTester(request.body));
 }));
 
-app.put("/testers/:id", asyncRoute(async (request, response) => {
+app.put("/testers/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const tester = await updateTester(String(request.params.id), request.body);
   if (!tester) {
     response.status(404).json({ error: "Tester not found" });
@@ -172,7 +172,7 @@ app.put("/testers/:id", asyncRoute(async (request, response) => {
   response.json(tester);
 }));
 
-app.delete("/testers/:id", asyncRoute(async (request, response) => {
+app.delete("/testers/:id", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   const removed = await deleteTester(String(request.params.id));
   response.status(removed ? 204 : 404).send(removed ? undefined : { error: "Tester not found" });
 }));
@@ -189,7 +189,7 @@ app.get("/cooldowns", asyncRoute(async (_request, response) => {
   response.json(await listCooldowns());
 }));
 
-app.post("/tests", asyncRoute(async (request, response) => {
+app.post("/tests", requireAuth(["ADMIN"]), asyncRoute(async (request, response) => {
   response.status(201).json(await recordTest(request.body));
 }));
 

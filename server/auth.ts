@@ -10,6 +10,14 @@ export type AuthUser = {
 
 const jwtSecret = () => process.env.JWT_SECRET || "dev-secret-change-me";
 
+export function isAdminDiscordId(discordId: string) {
+  const list = (process.env.ADMIN_DISCORD_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return list.includes(discordId);
+}
+
 export function signToken(user: AuthUser) {
   return jwt.sign(user, jwtSecret(), { expiresIn: "7d" });
 }

@@ -124,7 +124,7 @@ async function main() {
     where: { key: "branding" },
     update: {
       value: {
-        serverName: "Nerotier",
+        serverName: "HelloPvP",
         serverIp: "",
         discordLink: process.env.NEXT_PUBLIC_DISCORD_INVITE || "https://discord.gg/your-server"
       }
@@ -132,7 +132,7 @@ async function main() {
     create: {
       key: "branding",
       value: {
-        serverName: "Nerotier",
+        serverName: "HelloPvP",
         serverIp: "",
         discordLink: process.env.NEXT_PUBLIC_DISCORD_INVITE || "https://discord.gg/your-server"
       }

@@ -1,7 +1,7 @@
 export const serverConfig = {
-  serverName: "Nerotier",
+  serverName: "HelloPvP",
   serverLogo: "/logo.svg",
-  websiteName: "Minecraft Tier Testing Platform",
+  websiteName: "HelloPvP Tier Testing Platform",
   discordLink: process.env.NEXT_PUBLIC_DISCORD_INVITE || "https://discord.gg/your-server",
   websiteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
@@ -9,8 +9,8 @@ export const serverConfig = {
   colors: {
     background: "#050505",
     card: "#121212",
-    primary: "#31d158",
-    accent: "#67e8f9",
+    primary: "#ef4444",
+    accent: "#3b82f6",
     lava: "#ff7a1a",
     text: "#ffffff"
   }

@@ -6,6 +6,7 @@ import { serverConfig } from "@/config";
 import { usePreferences } from "@/components/preferences";
 import { GAMEMODES, REGIONS, TIERS, type Gamemode, type Player, type QueueEntry, type Region, type RegionCode, type Tester, type WaitlistEntry } from "@/lib/types";
 import { seedPlayers, seedQueue, seedTesters, seedWaitlist } from "@/lib/seed";
+import { authHeader, getStoredRole } from "@/lib/auth-client";
 import { cn, tierTone } from "@/lib/utils";
 
 const tabs = [
@@ -46,6 +47,8 @@ export function AdminPanel() {
   const [statsPayload, setStatsPayload] = useState<StatsPayload | null>(null);
   const [newMode, setNewMode] = useState<NewMode>({ name: "", slug: "", description: "" });
   const [newTester, setNewTester] = useState<NewTester>({ name: "", region: "EU", discordId: "", gamemodes: "overall" });
+  const [role, setRole] = useState<"USER" | "TESTER" | "ADMIN" | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
 
   const stats = useMemo(() => [
     { label: t("players"), value: statsPayload?.players ?? players.length },
@@ -100,10 +103,16 @@ export function AdminPanel() {
   }
 
   useEffect(() => {
+    setRole(getStoredRole());
+    setRoleChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (role !== "ADMIN") return;
     refreshAdminData();
     const timer = window.setInterval(refreshAdminData, 30_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [role]);
 
   async function createMode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,7 +124,7 @@ export function AdminPanel() {
     try {
       const response = await fetch(`${serverConfig.apiUrl}/gamemodes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify(optimistic)
       });
       if (response.ok) await refreshAdminData();
@@ -128,7 +137,7 @@ export function AdminPanel() {
   async function removeMode(slug: string) {
     setGamemodes((items) => items.filter((mode) => mode.slug !== slug));
     try {
-      await fetch(`${serverConfig.apiUrl}/gamemodes/${encodeURIComponent(slug)}`, { method: "DELETE" });
+      await fetch(`${serverConfig.apiUrl}/gamemodes/${encodeURIComponent(slug)}`, { method: "DELETE", headers: authHeader() });
       await refreshAdminData();
     } catch {
       // Local fallback already updated the view.
@@ -140,7 +149,7 @@ export function AdminPanel() {
     try {
       await fetch(`${serverConfig.apiUrl}/gamemodes/${encodeURIComponent(mode.slug)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ enabled: !mode.enabled })
       });
       await refreshAdminData();
@@ -164,7 +173,7 @@ export function AdminPanel() {
     try {
       const response = await fetch(`${serverConfig.apiUrl}/testers`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify(payload)
       });
       if (response.ok) await refreshAdminData();
@@ -181,7 +190,7 @@ export function AdminPanel() {
     try {
       await fetch(`${serverConfig.apiUrl}/testers/${encodeURIComponent(id)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ active: !current.active })
       });
       await refreshAdminData();
@@ -193,11 +202,34 @@ export function AdminPanel() {
   async function removeTester(id: string) {
     setTesters((items) => items.filter((tester) => tester.id !== id));
     try {
-      await fetch(`${serverConfig.apiUrl}/testers/${encodeURIComponent(id)}`, { method: "DELETE" });
+      await fetch(`${serverConfig.apiUrl}/testers/${encodeURIComponent(id)}`, { method: "DELETE", headers: authHeader() });
       await refreshAdminData();
     } catch {
       // Local fallback already updated the view.
     }
+  }
+
+  if (!roleChecked) {
+    return (
+      <div className="rounded-card border border-white/10 bg-card/90 p-8 text-center text-zinc-400 shadow-card">
+        {t("checkingDiscordLoginToken")}
+      </div>
+    );
+  }
+
+  if (role !== "ADMIN") {
+    return (
+      <div className="rounded-card border border-lava/30 bg-lava/10 p-8 text-center shadow-card">
+        <p className="text-sm font-black uppercase tracking-[0.24em] text-lava">{t("accessDenied")}</p>
+        <p className="mt-3 text-sm text-zinc-300">{t("adminAccessDeniedText")}</p>
+        <a
+          href={`${serverConfig.apiUrl}/auth/discord`}
+          className="mt-5 inline-flex rounded-full bg-emerald px-5 py-3 text-sm font-black text-black shadow-glow transition hover:scale-[1.03]"
+        >
+          {t("login")}
+        </a>
+      </div>
+    );
   }
 
   return (

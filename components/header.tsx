@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { ChevronDown, Moon, Settings, Sun } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { serverConfig } from "@/config";
 import { PixelLogo } from "@/components/pixel-logo";
+import { getStoredRole } from "@/lib/auth-client";
 import { type Language, usePreferences } from "@/components/preferences";
 
 const nav = [
   { href: "/ranking", label: "Ranking" },
-  { href: "/queue", label: "Queue" },
-  { href: "/admin", label: "Admin" }
+  { href: "/queue", label: "Queue" }
 ];
 
 const languages: Array<{ code: Language; label: string }> = [
@@ -24,7 +24,12 @@ const languages: Array<{ code: Language; label: string }> = [
 export function Header() {
   const { language, setLanguage, theme, setTheme, t } = usePreferences();
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const activeLanguage = languages.find((item) => item.code === language) || languages[2];
+
+  useEffect(() => {
+    setIsAdmin(getStoredRole() === "ADMIN");
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian/82 backdrop-blur-xl">
@@ -42,6 +47,11 @@ export function Header() {
               {t(item.label.toLowerCase())}
             </Link>
           ))}
+          {isAdmin && (
+            <Link href="/admin" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-white/10 hover:text-white">
+              {t("admin")}
+            </Link>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <div className="relative hidden sm:block">

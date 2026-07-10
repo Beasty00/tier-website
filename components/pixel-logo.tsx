@@ -11,7 +11,7 @@ const cells = [
 
 const tones: Record<string, string> = {
   g: "bg-emerald",
-  d: "bg-[#1f7a3d]",
+  d: "bg-[#7a1f1f]",
   b: "bg-[#4a2f1d]",
   e: "bg-diamond",
   m: "bg-lava",
