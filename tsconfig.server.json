@@ -16,6 +16,6 @@
     },
     "types": ["node"]
   },
-  "include": ["server/**/*.ts", "server/**/*.d.ts", "lib/**/*.ts", "prisma/**/*.ts", "config.ts"],
+  "include": ["server/**/*.ts", "server/**/*.d.ts", "netlify/functions/**/*.ts", "lib/**/*.ts", "prisma/**/*.ts", "config.ts"],
   "exclude": ["node_modules", ".next", "src"]
 }

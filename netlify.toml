@@ -2,8 +2,21 @@
   command = "npm run build"
   publish = ".next"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# The Express API (server/app.ts) runs as a Netlify Function. Requests to
+# /api/* on this same site get routed to it, so the frontend can just call
+# NEXT_PUBLIC_API_URL=/api instead of a separately hosted server.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
 # The Next.js adapter is auto-detected by Netlify — no [[plugins]] entry needed.
-# NEXT_PUBLIC_API_URL, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_DISCORD_INVITE, and
-# NEXT_PUBLIC_SERVER_IP must be set as Environment Variables in the Netlify
-# dashboard (Site configuration -> Environment variables), pointing at wherever
-# the Express API (server/) ends up hosted.
+# NEXT_PUBLIC_API_URL should be set to "/api" (same-site function), or to an
+# externally hosted API's base URL if you deploy server/ elsewhere instead.
+# NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_DISCORD_INVITE, and NEXT_PUBLIC_SERVER_IP
+# are also set as Environment Variables in the Netlify dashboard
+# (Site configuration -> Environment variables).
