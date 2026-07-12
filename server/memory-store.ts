@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { GAMEMODES, REGIONS, TIERS, type Gamemode, type Player, type QueueEntry, type RegionCode, type Tester, type TestResult, type TierCode, type WaitlistEntry } from "../lib/types";
 import { getStats as getSeedStats, rankPlayers, seedPlayers, seedQueue, seedTesters, seedTests, seedWaitlist } from "../lib/seed";
+import { placeholderHeadDataUri } from "../lib/skins";
+import { mojangAccountExists } from "./mojang";
+
+async function resolveSkin(username: string): Promise<string> {
+  const isReal = await mojangAccountExists(username);
+  return isReal ? `https://mc-heads.net/avatar/${encodeURIComponent(username)}/128` : placeholderHeadDataUri(username);
+}
 
 export type CooldownEntry = {
   id: string;
@@ -43,7 +50,13 @@ function estimateMinutes(position: number, gamemode: string) {
 }
 
 function tierPoints(tier: TierCode) {
-  return state.tiers.find((item) => item.code === tier)?.pointsMin || 600;
+  return state.tiers.find((item) => item.code === tier)?.pointsMin || 300;
+}
+
+function sumGamemodePoints(gamemodeTiers: Player["gamemodeTiers"]) {
+  return Object.entries(gamemodeTiers)
+    .filter(([mode]) => mode !== "overall")
+    .reduce((total, [, tier]) => total + tierPoints(tier as TierCode), 0);
 }
 
 function recalculateQueue() {
@@ -133,17 +146,18 @@ export function getPlayer(id: string) {
   return state.players.find((player) => [player.id, player.uuid, player.username].some((value) => normalize(value) === needle));
 }
 
-export function createPlayer(input: Partial<Player>) {
+export async function createPlayer(input: Partial<Player>) {
   if (!input.username) {
     throw new Error("username is required");
   }
 
   const tier = (input.tier || "LT5") as TierCode;
+  const skin = input.skin || (await resolveSkin(input.username));
   const created: Player = {
     id: input.id || `player-${normalize(input.username).replace(/[^a-z0-9]+/g, "-") || randomUUID()}`,
     uuid: input.uuid || randomUUID(),
     username: input.username,
-    skin: input.skin || `https://mc-heads.net/avatar/${encodeURIComponent(input.username)}/128`,
+    skin,
     region: (input.region || "EU") as RegionCode,
     points: input.points ?? tierPoints(tier),
     rank: 0,
@@ -336,7 +350,7 @@ export function deleteTester(id: string) {
   return before !== state.testers.length;
 }
 
-export function recordTest(input: { username?: string; uuid?: string; region?: RegionCode; gamemode?: string; tester?: string; tier?: TierCode; notes?: string; score?: number }) {
+export async function recordTest(input: { username?: string; uuid?: string; region?: RegionCode; gamemode?: string; tester?: string; tier?: TierCode; notes?: string; score?: number }) {
   if (!input.username || !input.region || !input.gamemode || !input.tier) {
     throw new Error("username, region, gamemode and tier are required");
   }
@@ -346,7 +360,7 @@ export function recordTest(input: { username?: string; uuid?: string; region?: R
   const tester = input.tester || "System";
 
   if (!player) {
-    player = createPlayer({
+    player = await createPlayer({
       username: input.username,
       uuid: input.uuid,
       region: input.region,
@@ -370,12 +384,13 @@ export function recordTest(input: { username?: string; uuid?: string; region?: R
 
   state.tests.unshift(result);
   const updatedHistory = [result, ...player.history].slice(0, 20);
+  const updatedGamemodeTiers = { ...player.gamemodeTiers, [gamemode]: input.tier } as Player["gamemodeTiers"];
   updatePlayer(player.id, {
     tier: gamemode === "overall" ? input.tier : player.tier,
-    points: Math.max(player.points, tierPoints(input.tier) + (input.score || 0)),
+    points: sumGamemodePoints(updatedGamemodeTiers) + (input.score || 0),
     tester,
     lastTestAt: result.createdAt,
-    gamemodeTiers: { [gamemode]: input.tier } as Player["gamemodeTiers"],
+    gamemodeTiers: updatedGamemodeTiers,
     history: updatedHistory
   });
 

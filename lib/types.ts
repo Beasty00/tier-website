@@ -87,16 +87,16 @@ export const REGIONS: Region[] = [
 ];
 
 export const TIERS: Tier[] = [
-  { id: "tier-ht1", code: "HT1", label: "High Tier 1", order: 1, pointsMin: 2400 },
-  { id: "tier-lt1", code: "LT1", label: "Low Tier 1", order: 2, pointsMin: 2200 },
-  { id: "tier-ht2", code: "HT2", label: "High Tier 2", order: 3, pointsMin: 2000 },
-  { id: "tier-lt2", code: "LT2", label: "Low Tier 2", order: 4, pointsMin: 1800 },
-  { id: "tier-ht3", code: "HT3", label: "High Tier 3", order: 5, pointsMin: 1600 },
-  { id: "tier-lt3", code: "LT3", label: "Low Tier 3", order: 6, pointsMin: 1400 },
-  { id: "tier-ht4", code: "HT4", label: "High Tier 4", order: 7, pointsMin: 1200 },
-  { id: "tier-lt4", code: "LT4", label: "Low Tier 4", order: 8, pointsMin: 1000 },
-  { id: "tier-ht5", code: "HT5", label: "High Tier 5", order: 9, pointsMin: 800 },
-  { id: "tier-lt5", code: "LT5", label: "Low Tier 5", order: 10, pointsMin: 600 }
+  { id: "tier-ht1", code: "HT1", label: "High Tier 1", order: 1, pointsMin: 1200 },
+  { id: "tier-lt1", code: "LT1", label: "Low Tier 1", order: 2, pointsMin: 1100 },
+  { id: "tier-ht2", code: "HT2", label: "High Tier 2", order: 3, pointsMin: 1000 },
+  { id: "tier-lt2", code: "LT2", label: "Low Tier 2", order: 4, pointsMin: 900 },
+  { id: "tier-ht3", code: "HT3", label: "High Tier 3", order: 5, pointsMin: 800 },
+  { id: "tier-lt3", code: "LT3", label: "Low Tier 3", order: 6, pointsMin: 700 },
+  { id: "tier-ht4", code: "HT4", label: "High Tier 4", order: 7, pointsMin: 600 },
+  { id: "tier-lt4", code: "LT4", label: "Low Tier 4", order: 8, pointsMin: 500 },
+  { id: "tier-ht5", code: "HT5", label: "High Tier 5", order: 9, pointsMin: 400 },
+  { id: "tier-lt5", code: "LT5", label: "Low Tier 5", order: 10, pointsMin: 300 }
 ];
 
 export const GAMEMODES: Gamemode[] = [

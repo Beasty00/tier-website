@@ -8,6 +8,7 @@ import { ModeTierBadge } from "@/components/mode-tier-badge";
 import { MinecraftItemIcon } from "@/components/minecraft-item-icon";
 import { usePreferences } from "@/components/preferences";
 import { GAMEMODES, REGIONS, TIERS, type Gamemode, type Player } from "@/lib/types";
+import { isPlaceholderSkin, placeholderBodyDataUri } from "@/lib/skins";
 import { cn, formatDate, regionTone, tierTone } from "@/lib/utils";
 
 const pageSize = 100;
@@ -149,7 +150,7 @@ export function RankingTable({ players }: { players: Player[] }) {
                 transition={{ delay: Math.min(index * 0.018, 0.18) }}
               >
                 <Link href={`/player/${player.username}`} className="ranking-row grid gap-4 px-4 py-4 transition hover:bg-white/[0.04] md:grid-cols-[176px_minmax(0,1fr)_92px_100px_minmax(0,1.55fr)] md:items-center md:px-5">
-                  <RankSlab rank={player.rank} username={player.username} />
+                  <RankSlab rank={player.rank} username={player.username} skin={player.skin} />
                   <div>
                     <p className="flex flex-wrap items-center gap-2 font-bold text-white">
                       {player.username}
@@ -182,7 +183,7 @@ export function RankingTable({ players }: { players: Player[] }) {
   );
 }
 
-function RankSlab({ rank, username }: { rank: number; username: string }) {
+function RankSlab({ rank, username, skin }: { rank: number; username: string; skin?: string }) {
   const tone = rank === 1
     ? "from-[#f0c24e] via-[#d7a734] to-[#916514]"
     : rank === 2
@@ -200,7 +201,7 @@ function RankSlab({ rank, username }: { rank: number; username: string }) {
         {rank}.
       </span>
       <img
-        src={`https://mc-heads.net/body/${encodeURIComponent(username)}/96`}
+        src={isPlaceholderSkin(skin) ? placeholderBodyDataUri(username) : `https://mc-heads.net/body/${encodeURIComponent(username)}/96`}
         alt=""
         className="pixelated absolute bottom-[2px] right-[16px] z-20 h-[60px] w-auto object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.45)]"
       />

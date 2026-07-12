@@ -2,6 +2,13 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "./db";
 import { GAMEMODES, REGIONS, TIERS, type Gamemode, type Player, type QueueEntry, type RegionCode, type Tester, type TestResult, type TierCode, type WaitlistEntry } from "../lib/types";
 import { getStats as getSeedStats, rankPlayers, seedGamemodes, seedPlayers, seedQueue, seedRegions, seedTesters, seedTests, seedTiers, seedWaitlist } from "../lib/seed";
+import { placeholderHeadDataUri } from "../lib/skins";
+import { mojangAccountExists } from "./mojang";
+
+async function resolveSkin(username: string): Promise<string> {
+  const isReal = await mojangAccountExists(username);
+  return isReal ? `https://mc-heads.net/avatar/${encodeURIComponent(username)}/128` : placeholderHeadDataUri(username);
+}
 
 export type CooldownEntry = {
   id: string;
@@ -119,7 +126,7 @@ function dateToIso(date?: Date | null) {
 }
 
 function tierPoints(tier: TierCode) {
-  return TIERS.find((item) => item.code === tier)?.pointsMin || 600;
+  return TIERS.find((item) => item.code === tier)?.pointsMin || 300;
 }
 
 function toGamemode(row: { id: string; slug: string; name: string; description: string | null; icon: string | null; enabled: boolean }): Gamemode {
@@ -560,12 +567,13 @@ export async function createPlayer(input: Partial<Player>, runBootstrap = true) 
   const tier = await findTier(input.tier || "LT5");
   const region = await findRegion(input.region || "EU");
   const tester = input.tester ? await db().tester.findFirst({ where: { name: { equals: input.tester, mode: "insensitive" } } }) : null;
+  const skin = input.skin || (await resolveSkin(username));
   const created = await db().player.create({
     data: {
       id: input.id || `player-${slugify(username)}`,
       uuid: input.uuid || randomUUID(),
       username,
-      skin: input.skin || `https://mc-heads.net/avatar/${encodeURIComponent(username)}/128`,
+      skin,
       regionId: region.id,
       points: input.points ?? tier.pointsMin,
       rank: input.rank || 0,
@@ -961,10 +969,18 @@ export async function recordTest(input: { username?: string; uuid?: string; regi
     create: { playerId: player.id, gamemodeId: gamemode.id, tierId: tier.id, testerId: tester?.id, points: tier.pointsMin + (input.score || 0) }
   });
 
+  const playerTiers = await db().playerTier.findMany({
+    where: { playerId: player.id },
+    include: { gamemode: true }
+  }) as Array<{ points: number; gamemode: { slug: string } }>;
+  const totalPoints = playerTiers
+    .filter((row: { gamemode: { slug: string } }) => row.gamemode.slug !== "overall")
+    .reduce((total: number, row: { points: number }) => total + row.points, 0);
+
   await db().player.update({
     where: { id: player.id },
     data: {
-      points: Math.max(player.points, tier.pointsMin + (input.score || 0)),
+      points: totalPoints,
       lastTestAt: createdTest.createdAt,
       testerId: tester?.id,
       ...(gamemode.slug === "overall" ? { tierId: tier.id } : {})
