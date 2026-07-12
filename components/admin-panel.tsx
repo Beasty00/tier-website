@@ -6,12 +6,13 @@ import { serverConfig } from "@/config";
 import { usePreferences } from "@/components/preferences";
 import { GAMEMODES, REGIONS, TIERS, type Gamemode, type Player, type QueueEntry, type Region, type RegionCode, type Tester, type WaitlistEntry } from "@/lib/types";
 import { seedPlayers, seedQueue, seedTesters, seedWaitlist } from "@/lib/seed";
-import { authHeader, getStoredRole } from "@/lib/auth-client";
+import { authHeader, getStoredRole, getStoredUsername } from "@/lib/auth-client";
 import { cn, tierTone } from "@/lib/utils";
 
 const tabs = [
   { id: "dashboard", labelKey: "dashboard" },
   { id: "players", labelKey: "adminPlayers" },
+  { id: "recordTest", labelKey: "recordTest" },
   { id: "tiers", labelKey: "adminTiers" },
   { id: "queue", labelKey: "adminQueue" },
   { id: "waitlist", labelKey: "adminWaitlist" },
@@ -24,6 +25,7 @@ const tabs = [
 
 type NewMode = { name: string; slug: string; description: string };
 type NewTester = { name: string; region: RegionCode; discordId: string; gamemodes: string };
+type NewTest = { username: string; region: RegionCode; gamemode: string; tier: string; notes: string };
 type StatsPayload = {
   players: number;
   tests: number;
@@ -47,6 +49,10 @@ export function AdminPanel() {
   const [statsPayload, setStatsPayload] = useState<StatsPayload | null>(null);
   const [newMode, setNewMode] = useState<NewMode>({ name: "", slug: "", description: "" });
   const [newTester, setNewTester] = useState<NewTester>({ name: "", region: "EU", discordId: "", gamemodes: "overall" });
+  const [newPlayer, setNewPlayer] = useState<{ username: string; region: RegionCode; tier: string }>({ username: "", region: "EU", tier: "LT5" });
+  const [newTest, setNewTest] = useState<NewTest>({ username: "", region: "EU", gamemode: "overall", tier: "LT5", notes: "" });
+  const [testSubmitting, setTestSubmitting] = useState(false);
+  const [testFeedback, setTestFeedback] = useState<string | null>(null);
   const [role, setRole] = useState<"USER" | "TESTER" | "ADMIN" | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
 
@@ -141,6 +147,65 @@ export function AdminPanel() {
       await refreshAdminData();
     } catch {
       // Local fallback already updated the view.
+    }
+  }
+
+  async function createPlayer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newPlayer.username.trim()) return;
+    try {
+      const response = await fetch(`${serverConfig.apiUrl}/player`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ username: newPlayer.username.trim(), region: newPlayer.region, tier: newPlayer.tier })
+      });
+      if (response.ok) await refreshAdminData();
+    } catch {
+      // Ignore — refreshAdminData already ran on success; nothing to roll back optimistically here.
+    }
+    setNewPlayer({ username: "", region: "EU", tier: "LT5" });
+  }
+
+  async function removePlayer(id: string) {
+    setPlayers((items) => items.filter((player) => player.id !== id));
+    try {
+      await fetch(`${serverConfig.apiUrl}/player/${encodeURIComponent(id)}`, { method: "DELETE", headers: authHeader() });
+      await refreshAdminData();
+    } catch {
+      // Local fallback already updated the view.
+    }
+  }
+
+  async function submitTest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newTest.username.trim()) return;
+    setTestSubmitting(true);
+    setTestFeedback(null);
+    try {
+      const response = await fetch(`${serverConfig.apiUrl}/tests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({
+          username: newTest.username.trim(),
+          region: newTest.region,
+          gamemode: newTest.gamemode,
+          tier: newTest.tier,
+          notes: newTest.notes || undefined,
+          tester: getStoredUsername() || "System"
+        })
+      });
+      if (response.ok) {
+        setTestFeedback(t("testRecorded"));
+        await refreshAdminData();
+        setNewTest((value) => ({ ...value, username: "", notes: "" }));
+      } else {
+        const body = await response.json().catch(() => null) as { error?: string } | null;
+        setTestFeedback(body?.error || t("testFailed"));
+      }
+    } catch {
+      setTestFeedback(t("testFailed"));
+    } finally {
+      setTestSubmitting(false);
     }
   }
 
@@ -264,15 +329,95 @@ export function AdminPanel() {
         )}
 
         {active === "players" && (
-          <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
-            {players.map((player) => (
-              <div key={player.id} className="grid gap-3 border-b border-white/10 bg-black/25 p-4 last:border-b-0 sm:grid-cols-[1fr_0.5fr_0.5fr_0.5fr] sm:items-center">
-                <span className="font-bold text-white">{player.username}</span>
-                <span className="text-zinc-400">{player.region}</span>
-                <span className="text-zinc-400">#{player.rank}</span>
-                <span className={cn("w-fit rounded-full border px-3 py-1 text-xs font-black", tierTone(player.tier))}>{player.tier}</span>
+          <div className="mt-8 grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+            <form onSubmit={createPlayer} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <p className="font-bold text-white">{t("addPlayer")}</p>
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={newPlayer.username}
+                  onChange={(event) => setNewPlayer((value) => ({ ...value, username: event.target.value }))}
+                  placeholder={t("username")}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                />
+                <select
+                  value={newPlayer.region}
+                  onChange={(event) => setNewPlayer((value) => ({ ...value, region: event.target.value as RegionCode }))}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                >
+                  {regions.map((region) => <option key={region.code} value={region.code}>{region.code} - {region.name}</option>)}
+                </select>
+                <select
+                  value={newPlayer.tier}
+                  onChange={(event) => setNewPlayer((value) => ({ ...value, tier: event.target.value }))}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                >
+                  {TIERS.map((tier) => <option key={tier.code} value={tier.code}>{tier.code} - {tier.label}</option>)}
+                </select>
+                <button className="rounded-2xl bg-emerald px-5 py-3 font-black text-black shadow-glow">{t("addPlayer")}</button>
               </div>
-            ))}
+            </form>
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              {players.length === 0 && (
+                <div className="p-4 text-sm text-zinc-500">{t("noPlayersYet")}</div>
+              )}
+              {players.map((player) => (
+                <div key={player.id} className="grid gap-3 border-b border-white/10 bg-black/25 p-4 last:border-b-0 sm:grid-cols-[1fr_0.5fr_0.5fr_0.5fr_auto] sm:items-center">
+                  <span className="font-bold text-white">{player.username}</span>
+                  <span className="text-zinc-400">{player.region}</span>
+                  <span className="text-zinc-400">#{player.rank}</span>
+                  <span className={cn("w-fit rounded-full border px-3 py-1 text-xs font-black", tierTone(player.tier))}>{player.tier}</span>
+                  <button onClick={() => removePlayer(player.id)} className="rounded-full border border-lava/40 px-4 py-2 text-sm font-black text-lava transition hover:bg-lava/10">{t("delete")}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {active === "recordTest" && (
+          <div className="mt-8 max-w-xl">
+            <form onSubmit={submitTest} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <p className="font-bold text-white">{t("recordTest")}</p>
+              <p className="mt-1 text-sm text-zinc-500">{t("recordTestHint")}</p>
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={newTest.username}
+                  onChange={(event) => setNewTest((value) => ({ ...value, username: event.target.value }))}
+                  placeholder={t("username")}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                />
+                <select
+                  value={newTest.region}
+                  onChange={(event) => setNewTest((value) => ({ ...value, region: event.target.value as RegionCode }))}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                >
+                  {regions.map((region) => <option key={region.code} value={region.code}>{region.code} - {region.name}</option>)}
+                </select>
+                <select
+                  value={newTest.gamemode}
+                  onChange={(event) => setNewTest((value) => ({ ...value, gamemode: event.target.value }))}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                >
+                  {gamemodes.map((mode) => <option key={mode.slug} value={mode.slug}>{mode.name}</option>)}
+                </select>
+                <select
+                  value={newTest.tier}
+                  onChange={(event) => setNewTest((value) => ({ ...value, tier: event.target.value }))}
+                  className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                >
+                  {TIERS.map((tier) => <option key={tier.code} value={tier.code}>{tier.code} - {tier.label}</option>)}
+                </select>
+                <textarea
+                  value={newTest.notes}
+                  onChange={(event) => setNewTest((value) => ({ ...value, notes: event.target.value }))}
+                  placeholder={t("notesOptional")}
+                  className="min-h-24 rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-emerald/60"
+                />
+                <button disabled={testSubmitting} className="rounded-2xl bg-emerald px-5 py-3 font-black text-black shadow-glow disabled:opacity-50">
+                  {testSubmitting ? t("submitting") : t("recordTest")}
+                </button>
+                {testFeedback && <p className="text-sm text-zinc-300">{testFeedback}</p>}
+              </div>
+            </form>
           </div>
         )}
 

@@ -29,6 +29,24 @@ export function getStoredRole(): "USER" | "TESTER" | "ADMIN" | null {
   }
 }
 
+/** Same caveat as getStoredRole: decoded for display only, not verified. */
+export function getStoredUsername(): string | null {
+  const token = getStoredToken();
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return decoded.username ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function logout() {
+  clearStoredToken();
+  if (typeof window !== "undefined") window.location.reload();
+}
+
 export function authHeader(): Record<string, string> {
   const token = getStoredToken();
   return token ? { Authorization: `Bearer ${token}` } : {};

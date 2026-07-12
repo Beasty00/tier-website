@@ -5,7 +5,7 @@ import { ChevronDown, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { serverConfig } from "@/config";
 import { PixelLogo } from "@/components/pixel-logo";
-import { getStoredRole } from "@/lib/auth-client";
+import { getStoredRole, getStoredUsername, logout } from "@/lib/auth-client";
 import { type Language, usePreferences } from "@/components/preferences";
 
 const nav = [
@@ -25,10 +25,12 @@ export function Header() {
   const { language, setLanguage, theme, setTheme, t } = usePreferences();
   const [languageOpen, setLanguageOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const activeLanguage = languages.find((item) => item.code === language) || languages[2];
 
   useEffect(() => {
     setIsAdmin(getStoredRole() === "ADMIN");
+    setUsername(getStoredUsername());
   }, []);
 
   return (
@@ -95,9 +97,24 @@ export function Header() {
           <span className="hidden h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[0.06] text-zinc-400 sm:grid">
             <Settings className="h-4 w-4" />
           </span>
-          <a href={`${serverConfig.apiUrl}/auth/discord`} className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-zinc-200 transition hover:border-emerald/50 hover:text-white sm:inline-flex">
-            {t("login")}
-          </a>
+          {username ? (
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-zinc-200">
+                {username}
+              </span>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-zinc-200 transition hover:border-lava/50 hover:text-white"
+              >
+                {t("logout")}
+              </button>
+            </div>
+          ) : (
+            <a href={`${serverConfig.apiUrl}/auth/discord`} className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-zinc-200 transition hover:border-emerald/50 hover:text-white sm:inline-flex">
+              {t("login")}
+            </a>
+          )}
           <a href={serverConfig.discordLink} className="rounded-full bg-emerald px-4 py-2 text-sm font-black text-black shadow-glow transition hover:scale-[1.03]">
             {t("discord")}
           </a>

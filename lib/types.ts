@@ -109,5 +109,6 @@ export const GAMEMODES: Gamemode[] = [
   { id: "mode-smp", slug: "smp", name: "SMP", description: "SMP-realistic combat scenarios.", icon: "SM", enabled: true },
   { id: "mode-sword", slug: "sword", name: "Sword", description: "Sword-only mechanical testing.", icon: "SW", enabled: true },
   { id: "mode-axe", slug: "axe", name: "Axe", description: "Axe and shield pressure testing.", icon: "AX", enabled: true },
-  { id: "mode-mace", slug: "mace", name: "Mace", description: "Modern mace burst and movement testing.", icon: "MC", enabled: true }
+  { id: "mode-mace", slug: "mace", name: "Mace", description: "Modern mace burst and movement testing.", icon: "MC", enabled: true },
+  { id: "mode-spear", slug: "spear", name: "Spear", description: "Spear reach and poke-control testing.", icon: "SP", enabled: true }
 ];
