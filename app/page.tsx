@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Activity, Clock, Layers3, ShieldCheck, Trophy, Users } from "lucide-react";
 import { HeroMotion, Lift, Reveal } from "@/components/animated";
-import { PixelLogo } from "@/components/pixel-logo";
 import { usePreferences } from "@/components/preferences";
 import { RankingTable } from "@/components/ranking-table";
 import { StatCard } from "@/components/stat-card";
@@ -27,7 +26,7 @@ export default function HomePage() {
         <div className="absolute left-1/2 top-20 h-80 w-80 -translate-x-1/2 rounded-full bg-emerald/10 blur-3xl" />
         <HeroMotion>
           <div className="relative z-10">
-            <PixelLogo />
+            <img src={serverConfig.serverLogo} alt={serverConfig.serverName} className="h-24 w-24 rounded-card object-contain shadow-glow" />
             <div className="mt-8 inline-flex rounded-full border border-emerald/30 bg-emerald/10 px-4 py-2 text-sm font-black uppercase tracking-[0.22em] text-emerald">
               {t("homeBadge")}
             </div>

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ChevronDown, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { serverConfig } from "@/config";
-import { PixelLogo } from "@/components/pixel-logo";
 import { getStoredRole, getStoredUsername, logout } from "@/lib/auth-client";
 import { type Language, usePreferences } from "@/components/preferences";
 
@@ -37,7 +36,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian/82 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <PixelLogo size="sm" />
+          <img src={serverConfig.serverLogo} alt={serverConfig.serverName} className="h-10 w-10 rounded-lg object-contain" />
           <div>
             <p className="font-display text-sm font-black uppercase tracking-[0.28em] text-white">{serverConfig.serverName}</p>
             <p className="hidden text-xs text-zinc-500 sm:block">{t("tierNetwork")}</p>

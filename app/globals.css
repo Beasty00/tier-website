@@ -9,9 +9,9 @@
   --line: #2a2a2a;
   --text: #ffffff;
   --muted: #9ca3af;
-  --emerald: #ef4444;
-  --diamond: #3b82f6;
-  --lava: #ff7a1a;
+  --emerald: #2f7dfa;
+  --diamond: #f5f5f5;
+  --lava: #ef4444;
   --gold: #ffd166;
 }
 
@@ -22,9 +22,9 @@
   --line: #d9cdb8;
   --text: #14110b;
   --muted: #5b6575;
-  --emerald: #b91c1c;
-  --diamond: #1d4ed8;
-  --lava: #d95f12;
+  --emerald: #1d4ed8;
+  --diamond: #1f2937;
+  --lava: #b91c1c;
   --gold: #b97900;
 }
 
@@ -42,8 +42,8 @@ body {
   margin: 0;
   color: var(--text);
   background:
-    radial-gradient(circle at 20% 0%, rgba(239, 68, 68, 0.14), transparent 28rem),
-    radial-gradient(circle at 78% 8%, rgba(59, 130, 246, 0.1), transparent 30rem),
+    radial-gradient(circle at 20% 0%, rgba(47, 125, 250, 0.16), transparent 28rem),
+    radial-gradient(circle at 78% 8%, rgba(245, 245, 245, 0.06), transparent 30rem),
     linear-gradient(180deg, #050505 0%, #090909 52%, #050505 100%);
   font-family: Outfit, "Segoe UI", sans-serif;
   text-rendering: optimizeLegibility;
@@ -53,8 +53,8 @@ body {
 [data-theme="light"] body {
   color: var(--text);
   background:
-    radial-gradient(circle at 18% 0%, rgba(185, 28, 28, 0.16), transparent 26rem),
-    radial-gradient(circle at 82% 10%, rgba(29, 78, 216, 0.14), transparent 28rem),
+    radial-gradient(circle at 18% 0%, rgba(29, 78, 216, 0.14), transparent 26rem),
+    radial-gradient(circle at 82% 10%, rgba(31, 41, 55, 0.08), transparent 28rem),
     linear-gradient(180deg, #f7f1e6 0%, #eee2cf 55%, #f8f4ec 100%);
 }
 
@@ -98,7 +98,7 @@ a {
 }
 
 ::selection {
-  background: rgba(239, 68, 68, 0.36);
+  background: rgba(47, 125, 250, 0.36);
 }
 
 .minecraft-grid {
@@ -138,8 +138,8 @@ a {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  border-color: rgba(239, 68, 68, 0.34);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48), 0 0 55px rgba(239, 68, 68, 0.08);
+  border-color: rgba(47, 125, 250, 0.34);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48), 0 0 55px rgba(47, 125, 250, 0.1);
 }
 
 .ambient-orb {
